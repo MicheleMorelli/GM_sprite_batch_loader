@@ -10,4 +10,4 @@ else
     reg='s/^.*? (\d?\d?\d\dx\d?\d?\d\d) .*$/$1/i'
 fi
 
-identify $1 | perl -pe "$reg"
+identify $file | perl -pe "$reg"
