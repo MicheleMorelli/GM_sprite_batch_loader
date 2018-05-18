@@ -1,0 +1,29 @@
+<assets>
+  <Configs name="configs">
+    <Config>Configs\Default</Config>
+  </Configs>
+  <NewExtensions />
+  <sounds name="sound" />
+  <sprites name="sprites">
+    <sprites name="gruppo1">
+      <sprite>sprites\sprite0_2</sprite>
+      <sprite>sprites\sprite1_chachacha</sprite>
+    </sprites>
+    <sprites name="gruppo2">
+      <sprite>sprites\sprite3</sprite>
+    </sprites>
+    <sprite>sprites\sprite4</sprite>
+	<sprite>sprites\2</sprite>
+  <sprite>sprites\aaa_expr</sprite><sprite>sprites\aaa_expr_bik</sprite><sprite>sprites\aaa_expr_vest</sprite><sprite>sprites\A_missneo</sprite><sprite>sprites\bocca</sprite><sprite>sprites\gir_pec</sprite><sprite>sprites\pos1.png</sprite><sprite>sprites\pos2.png</sprite><sprite>sprites\post_sbo1</sprite><sprite>sprites\post_sbo2</sprite><sprite>sprites\post_sbo3gif</sprite><sprite>sprites\pos_alt.png</sprite><sprite>sprites\pos_cap.png</sprite><sprite>sprites\pos_cap2.png</sprite><sprite>sprites\pos_cap3.png</sprite><sprite>sprites\pos_cap4.png</sprite><sprite>sprites\pos_sdra.png</sprite><sprite>sprites\pos_sdra2.png</sprite></sprites>
+  
+  <backgrounds name="background" />
+  <paths name="paths" />
+  <help>
+    <rtf>help.rtf</rtf>
+  </help>
+  <TutorialState>
+    <IsTutorial>0</IsTutorial>
+    <TutorialName />
+    <TutorialPage>0</TutorialPage>
+  </TutorialState>
+</assets>

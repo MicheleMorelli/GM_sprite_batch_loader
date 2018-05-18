@@ -46,7 +46,7 @@ def process_image_and_get_info(img, images, INDIR,OUTDIR, TEMPDIR):
 
 def create_sprite_gmx(filename,images_info, TEMPLATEDIR, OUTDIR):
     template = TEMPLATEDIR + '/template.gmx'
-    target_file = OUTDIR + '/' + re.sub('\.gif','', filename) + ".gmx"
+    target_file = OUTDIR + '/' + re.sub('\.gif','', filename) + ".sprite.gmx"
     shutil.copy(template,target_file)
     tree = ET.parse(target_file)
     root = tree.getroot()
@@ -55,11 +55,17 @@ def create_sprite_gmx(filename,images_info, TEMPLATEDIR, OUTDIR):
     set_xml_value(root,'bbox_right', images_info[filename]['WIDTH'] - 1)
     set_xml_value(root,'bbox_bottom', images_info[filename]['HEIGHT'] - 1)
     for i in range(len(images_info[filename]['FRAMES'])):
-        append_xml_value(root, root.find('frames'), "images\\" + images_info[filename]['FRAMES'][i], i)
+        append_xml_value(root, root.find('frames'), 'frame', "images\\" + images_info[filename]['FRAMES'][i], {'index':str(i)})
     tree.write(target_file)
 
-def update_master_gmx(images_info):
-    pass
+def update_master_gmx(master_gmx_file, images_info):
+    tree = ET.parse(master_gmx_file)
+    root = tree.getroot()
+    for sprite in images_info:
+        name = re.sub('\.gif','', sprite)
+        append_xml_value(root, root.find('sprites'), 'sprite', "sprites\\" + name, {})
+    tree.write(master_gmx_file + "BACKUP")
+
 
 
 
@@ -68,8 +74,8 @@ def set_xml_value(root, tag, new_value):
         e.text = str(new_value)
 
 
-def append_xml_value(root, parent, new_value, count):
-    ET.SubElement(parent, 'frame', attrib={'index':str(count)}).text = new_value 
+def append_xml_value(root, parent, tag, new_value, attrib_dict):
+        ET.SubElement(parent, tag , attrib=attrib_dict).text = new_value 
 
 def main():
     
@@ -81,7 +87,7 @@ def main():
         process_image_and_get_info(image, images_info, INDIR, OUTDIR_IMAGES, TEMPDIR) 
         create_sprite_gmx(image, images_info, SCRIPTDIR, OUTDIR)
 
-    update_master_gmx(images_info)
+    update_master_gmx(SCRIPTDIR + '/sprite_batch_test.project.gmx', images_info)
     #TODO change this!
     os.system("rm -rf %s" % TEMPDIR)
     
