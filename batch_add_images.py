@@ -21,7 +21,6 @@ def setup_directories():
 
 def decompose_img(filename, out_dir):
     name = re.sub('\.gif','', os.path.basename(filename))
-    print("Processing " + name)
     cmd = "convert -coalesce %s %s/%s_%%d.png" % (filename, out_dir, name)
     os.system(cmd)
 
@@ -29,6 +28,12 @@ def decompose_img(filename, out_dir):
 def remove_background(png_img, in_dir, out_dir):
     cmd = 'convert %s/%s -transparent "rgb(112,204,110)" %s/%s' % (in_dir, png_img, out_dir,png_img)
     os.system(cmd)
+
+
+def rm_wildcard(location):
+    for f in os.listdir(location):
+            os.remove(os.path.join(location,f))
+
 
 
 def process_image_and_get_info(img, images, INDIR,OUTDIR, TEMPDIR):
@@ -42,9 +47,11 @@ def process_image_and_get_info(img, images, INDIR,OUTDIR, TEMPDIR):
     for png in os.listdir(TEMPDIR):
         images[img]['FRAMES'].append(png)
         remove_background(png,TEMPDIR, OUTDIR)
+    rm_wildcard(TEMPDIR)  # to remove the pngs from the temp folder once done. 
 
 
 def create_sprite_gmx(filename,images_info, TEMPLATEDIR, OUTDIR):
+    print("Processing %s..." % filename, end="")
     template = TEMPLATEDIR + '/template.gmx'
     target_file = OUTDIR + '/' + re.sub('\.gif','', filename) + ".sprite.gmx"
     shutil.copy(template,target_file)
@@ -57,6 +64,7 @@ def create_sprite_gmx(filename,images_info, TEMPLATEDIR, OUTDIR):
     for i in range(len(images_info[filename]['FRAMES'])):
         append_xml_value(root, root.find('frames'), 'frame', "images\\" + images_info[filename]['FRAMES'][i], {'index':str(i)})
     tree.write(target_file)
+    print("Done!")
 
 def update_master_gmx(master_gmx_file, images_info):
     tree = ET.parse(master_gmx_file)
@@ -65,8 +73,6 @@ def update_master_gmx(master_gmx_file, images_info):
         name = re.sub('\.gif','', sprite)
         append_xml_value(root, root.find('sprites'), 'sprite', "sprites\\" + name, {})
     tree.write(master_gmx_file + "BACKUP")
-
-
 
 
 def set_xml_value(root, tag, new_value):
