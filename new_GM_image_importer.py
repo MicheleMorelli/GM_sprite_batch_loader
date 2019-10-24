@@ -9,6 +9,9 @@ import json
 
 
 
+
+
+
 def get_args():
     '''
     Get the arguments from the commandline. The script expects the first arg
@@ -17,7 +20,7 @@ def get_args():
     '''
     args = sys.argv
     if (len(args) <= 2):
-        abort(f"Please indicate the project and the sprites folder\n"
+        sys.exit(f"Please indicate the project and the sprites folder\n"
                 f"e.g. {__name__} project.project sprites")
     project = args[1]
     sprite_source = args[2]
@@ -28,24 +31,24 @@ def get_project_and_sprites_dirs():
     project, sprites_source = get_args()
     if (valid_project_and_sprites_source(project, sprites_source)):
         return project, sprites_source
-    abort("ERROR: something is wrong with the arguments that were passed...")
+    sys.exit("ERROR: something is wrong with the arguments that were passed...")
 
 
 def valid_project_and_sprites_source(project, sprites_source):
     if (not os.path.isdir(sprites_source)):
-        abort(f"ERROR: the indicated sprite source ({sprites_source}) is incorrect."
+        sys.exit(f"ERROR: the indicated sprite source ({sprites_source}) is incorrect."
                 f"Aborting...")
     return (is_a_project(project) and os.path.isdir(sprites_source))
 
 
 def is_a_project(project):
     if (not os.path.isdir(project)):
-        abort(f"ERROR: the indicated project ({project}) is incorrect."
+        sys.exit(f"ERROR: the indicated project ({project}) is incorrect."
                 f"Aborting...")
     for fname in os.listdir(project):
         if (fname.endswith('.project.gmx')):
             return True
-    abort(f"ERROR: {project} does not look like a GML project."
+    sys.exit(f"ERROR: {project} does not look like a GML project."
             f"Aborting...")
 
 
@@ -148,14 +151,48 @@ def create_gmx_resource_file(data_dict, target_dir) -> None:
     tree.write(target_file)
     print("Done!")
 
-
-def update_master_gmx(master_gmx_file, images_info):
+def update_gmx_project_xml(processed_structure, PROJECT_DIR):
+    master_gmx_file = f"{PROJECT_DIR}/{gmx_project_file_name(PROJECT_DIR)}" 
     tree = ET.parse(master_gmx_file)
     root = tree.getroot()
-    for sprite in images_info:
-        name = re.sub('\.gif','', sprite)
-        append_xml_value(root, root.find('sprites'), 'sprite', "sprites\\" + name, {})
-    tree.write(master_gmx_file + "BACKUP")
+    # remove sprites elements
+    for spr in root.findall('.//sprites'):
+        root.remove(spr)
+    #add sprites
+    spr_sub = ET.Element("sprites")
+    spr_sub.set('name','sprites') 
+    sprites_xml = create_sprites_xml(processed_structure,root, spr_sub)
+    root.append(sprites_xml)
+    print(ET.tostring(root).decode())
+    #tree.write(master_gmx_file + "BACKUP")
+
+
+def create_sprites_xml(sprites_dict: Dict[str,Any], root: ET, subtree: ET) -> Dict[str,Any]:
+    d: Dict[str, Any] = sprites_dict
+    name = re.sub(r"\.(gif|png)$","",d['NAME'])
+    print(f"processing {name}")
+    if (d["TYPE"] == "file"):
+        elem = ET.Element("sprite")
+        elem.text = f"sprites\\{name}"
+        return elem
+    elif (d["TYPE"] == "directory"):
+        elem = ET.Element("sprites")
+        elem.set('name', name) 
+        recursive_tree = lambda x: create_sprites_xml(x, root, subtree)
+        for i in d["CONTENTS"]:
+            elem.append(recursive_tree(i))
+        subtree.append(elem)
+        return subtree
+        
+    
+
+
+def gmx_project_file_name(project_dir: str) -> str:
+    name = None
+    for f in os.listdir(project_dir):
+        if re.search(r"\.project\.gmx$", f):
+            name = f
+    return name if name else sys.exit("ERROR: GMX project not found!")
 
 
 def set_xml_value(root, tag, new_value):
@@ -178,7 +215,7 @@ def project_sprites_dirs(target_dir):
     PROJECT_SPRITES_IMAGES_DIR = f"{PROJECT_SPRITES_DIR}/images" 
     if (not os.path.isdir(PROJECT_SPRITES_DIR) or 
             not os.path.isdir(PROJECT_SPRITES_IMAGES_DIR)):
-        abort(f"ERROR: the script expects the target project sprites directory"
+        sys.exit(f"ERROR: the script expects the target project sprites directory"
                 f"to be in the standard GMS format.\nAborting..."
                 f"{PROJECT_SPRITES_DIR}   {PROJECT_SPRITES_IMAGES_DIR}")
     return PROJECT_SPRITES_DIR, PROJECT_SPRITES_IMAGES_DIR
@@ -207,11 +244,6 @@ def copy_all_files(src_dir,target_dir):
             shutil.copy(file_path, target_dir)
 
 
-def abort(message):
-    print(message)
-    sys.exit(1)
-
-
 def is_an_image_file(element:str, BASE_DIR:str, element_path:str) -> bool:
     return os.path.isfile(element_path) and re.search("\.(png|gif)$",element)
 
@@ -225,6 +257,8 @@ def main() -> None:
     print(json.dumps(processed_structure,indent=2))
     #create the sprite GMXs for all images in the dictionary
     make_all_sprite_gmx_files(processed_structure,project_sprites_dirs(PROJECT_DIR)[0] )
+    #update the GMX project
+    update_gmx_project_xml(processed_structure, PROJECT_DIR)
 
 
 if (__name__ == '__main__'):
