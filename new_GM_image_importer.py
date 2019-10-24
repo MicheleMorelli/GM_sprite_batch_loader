@@ -4,6 +4,7 @@ import shutil
 import sys
 from PIL import Image
 import xml.etree.ElementTree as ET
+from xml.dom import minidom
 import re
 import json
 
@@ -164,25 +165,26 @@ def update_gmx_project_xml(processed_structure, PROJECT_DIR):
     sprites_xml = create_sprites_xml(processed_structure,root, spr_sub)
     root.append(sprites_xml)
     print(ET.tostring(root).decode())
-    #tree.write(master_gmx_file + "BACKUP")
+    tree.write(master_gmx_file + "BACKUP")
 
 
 def create_sprites_xml(sprites_dict: Dict[str,Any], root: ET, subtree: ET) -> Dict[str,Any]:
     d: Dict[str, Any] = sprites_dict
     name = re.sub(r"\.(gif|png)$","",d['NAME'])
-    print(f"processing {name}")
+    print(f"Processing {name} --> sprite.GMX")
     if (d["TYPE"] == "file"):
         elem = ET.Element("sprite")
         elem.text = f"sprites\\{name}"
         return elem
     elif (d["TYPE"] == "directory"):
         elem = ET.Element("sprites")
-        elem.set('name', name) 
+        attr = "sprites" if name == "." else name
+        elem.set('name', attr) 
         recursive_tree = lambda x: create_sprites_xml(x, root, subtree)
         for i in d["CONTENTS"]:
             elem.append(recursive_tree(i))
         subtree.append(elem)
-        return subtree
+        return elem
         
     
 
@@ -222,6 +224,7 @@ def project_sprites_dirs(target_dir):
     
 
 def decompose_img(filename, out_dir):
+    print(f"Decomposing {filename} ...")
     name = re.sub(r"\.(gif|png)","", os.path.basename(filename))
     cmd = f"convert -coalesce {filename} {out_dir}/{name}.png"
     os.system(cmd)
